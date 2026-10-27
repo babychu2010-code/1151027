@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>貝貝的比價小幫手</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F6F7F9; color: #1F2328;
+    font-family: -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 32px 16px 48px;
+    display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3; }
+  .sub { margin: 4px 0 8px; font-size: 14px; color: #6B7280; }
+  .card { background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 16px;
+    transition: background-color .2s, border-color .2s; }
+  .card.fastest { background: #EFF6FF; border-color: #2563EB; }
+  .card.cheapest { background: #ECFDF3; border-color: #16A34A; }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 26px; }
+  .head h2 { margin: 0; font-size: 18px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .tag { display: none; color: #FFFFFF; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .tag.cheap { background: #16A34A; }
+  .tag.fast { background: #2563EB; }
+  .cheapest .tag.cheap, .fastest .tag.fast { display: inline-block; }
+  .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  label span { font-size: 13px; color: #6B7280; }
+  input { width: 100%; height: 44px; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0 12px;
+    font: inherit; font-size: 16px; color: #1F2328; background: #FFFFFF; outline: none;
+    transition: border-color .2s; }
+  input:focus { border-color: #1F2328; }
+  .total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    border-top: 1px solid #E5E7EB; padding-top: 10px; }
+  .total small { font-size: 13px; color: #6B7280; }
+  .total strong { font-size: 32px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .saving { display: none; font-size: 13px; font-weight: 600; color: #15803D; }
+  .cheapest .saving { display: block; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>貝貝的比價小幫手</h1>
+    <p class="sub">辦公室印表機黑色碳粉匣</p>
+  </header>
+  <div id="cards" style="display:contents"></div>
+</main>
+<script>
+const suppliers = [
+  { name: "甲山", price: 1180, qty: 24, shipping: 0,    days: 3 },
+  { name: "乙禾", price: 1090, qty: 24, shipping: 600,  days: 7 },
+  { name: "丙川", price: 1050, qty: 24, shipping: 1800, days: 2 },
+];
+const fields = [["price", "單價"], ["qty", "數量"], ["shipping", "運費"], ["days", "交期天數"]];
+const money = (n) => "NT$ " + n.toLocaleString("zh-TW");
+const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+
+const box = document.getElementById("cards");
+const cards = suppliers.map((s, i) => {
+  const el = document.createElement("section");
+  el.className = "card";
+  el.innerHTML =
+    '<div class="head"><h2>' + s.name + '</h2><div class="tags">' +
+    '<span class="tag cheap">最便宜</span><span class="tag fast">最快到貨</span></div></div>' +
+    '<div class="fields">' + fields.map(([k, label]) =>
+      '<label><span>' + label + '</span><input type="number" inputmode="decimal" min="0" data-k="' + k +
+      '" value="' + s[k] + '"></label>').join("") + '</div>' +
+    '<div class="total"><small>總價</small><strong class="sum"></strong><span class="saving"></span></div>';
+  el.addEventListener("input", (e) => { s[e.target.dataset.k] = num(e.target.value); render(); });
+  box.appendChild(el);
+  return el;
+});
+
+function render() {
+  const totals = suppliers.map((s) => Math.round(s.price * s.qty + s.shipping));
+  const cheap = totals.indexOf(Math.min(...totals));
+  const fast = suppliers.map((s) => s.days).indexOf(Math.min(...suppliers.map((s) => s.days)));
+  const second = Math.min(...totals.filter((_, i) => i !== cheap));
+  cards.forEach((el, i) => {
+    el.classList.toggle("cheapest", i === cheap);
+    el.classList.toggle("fastest", i === fast);
+    el.querySelector(".sum").textContent = money(totals[i]);
+    el.querySelector(".saving").textContent = "比第二名省 " + money(second - totals[i]);
+  });
+}
+render();
+</script>
+</body>
+</html>
